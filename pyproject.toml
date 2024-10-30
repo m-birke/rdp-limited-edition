@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rdp-limited-edition"
+dynamic = ["version"]
+description = 'Ramer-Douglas-Peucker algorithm implementation with remaining points limit'
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = ["rdp", "ramer-douglas-peucker"]
+authors = [
+  { name = "m-birke", email = "wesci@web.de" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/m-birke/rdp-limited-edition#readme"
+Issues = "https://github.com/m-birke/rdp-limited-edition/issues"
+Source = "https://github.com/m-birke/rdp-limited-edition"
+
+[tool.hatch.version]
+path = "src/rdp_limited_edition/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/rdp_limited_edition tests}"
+
+[tool.coverage.run]
+source_pkgs = ["rdp_limited_edition", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/rdp_limited_edition/__about__.py",
+]
+
+[tool.coverage.paths]
+rdp_limited_edition = ["src/rdp_limited_edition", "*/rdp-limited-edition/src/rdp_limited_edition"]
+tests = ["tests", "*/rdp-limited-edition/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
