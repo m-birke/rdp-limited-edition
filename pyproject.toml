@@ -9,7 +9,7 @@ description = 'Ramer-Douglas-Peucker algorithm implementation with remaining poi
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-keywords = ["rdp", "ramer-douglas-peucker"]
+keywords = ["rdp", "ramer-douglas-peucker", "simplification", "line simplification"]
 authors = [
   { name = "m-birke", email = "wesci@web.de" },
 ]
@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = ["numpy"]
 
 [project.urls]
 Documentation = "https://github.com/m-birke/rdp-limited-edition#readme"
@@ -40,6 +40,11 @@ extra-dependencies = [
 ]
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/rdp_limited_edition tests}"
+
+[tool.towncrier]
+name = "rdp-limited-edition"
+directory = "changes"
+filename = "CHANGELOG.md"
 
 [tool.coverage.run]
 source_pkgs = ["rdp_limited_edition", "tests"]
