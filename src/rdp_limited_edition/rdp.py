@@ -1,19 +1,17 @@
+from typing import Union
+
 import numpy as np
-from typing import Optional
 
 
-def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Optional[float] = None) -> np.ndarray:
+def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[float, int]) -> list[int]:
     """Apply RDP algorithm to points on line
 
     :param x: x values
     :param y: y values
     :param max_points: maximum number of points to retain
-    :param tolerance: epsilon (tolerance band around aux line), defaults to None
+    :param tolerance: tolerance band around auxiliary line
     :return: indexes of points to retain
     """
-    if not tolerance:
-        tolerance = -1.0
-
     x_norm = (x - x.min()) / (x.max() - x.min())
     y_norm = (y - y.min()) / (y.max() - y.min())
     points = np.column_stack([x_norm, y_norm])
@@ -26,6 +24,8 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Optional
         
         slices_max_distance = []
         slices_argmax_distance = []
+
+        # TODO to reduce computation, only recalc slices which are new
         for i in range(0, (len(reduced_idxs) - 1)):
             slice_start = reduced_idxs[i]
             slice_end = reduced_idxs[i + 1] + 1
@@ -51,7 +51,7 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Optional
         if (len(reduced_idxs) >= max_points):
             to_terminate = True
     
-    return np.array(reduced_idxs)
+    return reduced_idxs
 
 
 def _calc_normal_distances_to_aux_line(points: np.array) -> np.array:
