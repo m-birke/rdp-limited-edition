@@ -45,7 +45,7 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
         else:
             argmax_over_max_distance_of_all_slices = np.argmax(slices_max_distance)
             idx_to_be_added = slices_argmax_distance[argmax_over_max_distance_of_all_slices]
-            reduced_idxs.append(idx_to_be_added)
+            reduced_idxs.append(int(idx_to_be_added))
             reduced_idxs = sorted(reduced_idxs)
         
         if (len(reduced_idxs) >= max_points):
