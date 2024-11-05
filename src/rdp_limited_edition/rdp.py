@@ -15,18 +15,20 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
     x_norm = (x - x.min()) / (x.max() - x.min())
     y_norm = (y - y.min()) / (y.max() - y.min())
     points = np.column_stack((x_norm, y_norm))
-
     # initially keep first and last point
-    reduced_idxs = [0, (x.shape[0] - 1)]
+    reduced_idxs = np.full(shape=x.shape[0], fill_value=x.shape[0])
+    reduced_idxs[0] = 0
+    reduced_idxs[1] = x.shape[0] - 1
+    num_reduced_idxs = 2
 
     to_terminate = False
     while not to_terminate:
 
-        slices_max_distance = np.empty((len(reduced_idxs)-1), dtype=float)
-        slices_argmax_distance = np.empty((len(reduced_idxs)-1), dtype=np.int64)
+        slices_max_distance = np.empty(shape=num_reduced_idxs-1, dtype=float)
+        slices_argmax_distance = np.empty(shape=num_reduced_idxs-1, dtype=np.int64)
 
         # TODO to reduce computation, only recalc slices which are new
-        for i in range(0, (len(reduced_idxs) - 1)):
+        for i in range(0, (num_reduced_idxs - 1)):
             slice_start = reduced_idxs[i]
             slice_end = reduced_idxs[i + 1] + 1
             if (slice_end - 1 - slice_start ) == 1:
@@ -43,13 +45,14 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
         else:
             argmax_over_max_distance_of_all_slices = np.argmax(slices_max_distance)
             idx_to_be_added = slices_argmax_distance[argmax_over_max_distance_of_all_slices]
-            reduced_idxs.append(int(idx_to_be_added))
-            reduced_idxs = sorted(reduced_idxs)
-        
-        if (len(reduced_idxs) >= max_points):
+            reduced_idxs[num_reduced_idxs] = (int(idx_to_be_added))
+            num_reduced_idxs += 1
+            reduced_idxs.sort()
+
+        if (num_reduced_idxs >= max_points):
             to_terminate = True
     
-    return reduced_idxs
+    return reduced_idxs[:num_reduced_idxs]
 
 
 def _calc_normal_distances_to_aux_line(points: np.array) -> np.array:
