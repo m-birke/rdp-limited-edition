@@ -21,9 +21,9 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
 
     to_terminate = False
     while not to_terminate:
-        
-        slices_max_distance = []
-        slices_argmax_distance = []
+
+        slices_max_distance = np.empty((len(reduced_idxs)-1), dtype=float)
+        slices_argmax_distance = np.empty((len(reduced_idxs)-1), dtype=np.int64)
 
         # TODO to reduce computation, only recalc slices which are new
         for i in range(0, (len(reduced_idxs) - 1)):
@@ -33,17 +33,15 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
                 # skip slices between directly neighboring points
                 continue
             slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:slice_end,])
-            slice_max_distance = max(slice_normal_distances)
-            slices_max_distance.append(slice_max_distance)
-            slice_argmax_distance = np.argmax(slice_normal_distances) + slice_start + 1
-            slices_argmax_distance.append(slice_argmax_distance)
+            slices_max_distance[i] = np.max(slice_normal_distances)
+            slices_argmax_distance[i] = np.argmax(slice_normal_distances) + slice_start + 1
 
-        overall_max_distance = max(slices_max_distance)
+        overall_max_distance = np.max(slices_max_distance)
         # if the max dist of every slice is already below tolerance, abort
         if (overall_max_distance < tolerance):
             to_terminate = True
         else:
-            argmax_over_max_distance_of_all_slices = np.argmax(np.asarray(slices_max_distance))
+            argmax_over_max_distance_of_all_slices = np.argmax(slices_max_distance)
             idx_to_be_added = slices_argmax_distance[argmax_over_max_distance_of_all_slices]
             reduced_idxs.append(int(idx_to_be_added))
             reduced_idxs = sorted(reduced_idxs)
