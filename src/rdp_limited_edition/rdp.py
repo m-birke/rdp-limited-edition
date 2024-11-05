@@ -14,7 +14,7 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
     """
     x_norm = (x - x.min()) / (x.max() - x.min())
     y_norm = (y - y.min()) / (y.max() - y.min())
-    points = np.column_stack([x_norm, y_norm])
+    points = np.column_stack((x_norm, y_norm))
 
     # initially keep first and last point
     reduced_idxs = [0, (x.shape[0] - 1)]
