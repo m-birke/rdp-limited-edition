@@ -16,25 +16,24 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
     y_norm = (y - y.min()) / (y.max() - y.min())
     points = np.column_stack((x_norm, y_norm))
     # initially keep first and last point
-    reduced_idxs = np.full(shape=x.shape[0], fill_value=x.shape[0])
-    reduced_idxs[0] = 0
-    reduced_idxs[1] = x.shape[0] - 1
-    num_reduced_idxs = 2
+    slices = np.empty(shape=(x.shape[0]-1, 2), dtype=np.int64)
+    slices[0] = np.asarray((0, x.shape[0] - 1))
+    num_slices = 1
 
     to_terminate = False
     while not to_terminate:
 
-        slices_max_distance = np.empty(shape=num_reduced_idxs-1, dtype=float)
-        slices_argmax_distance = np.empty(shape=num_reduced_idxs-1, dtype=np.int64)
+        slices_max_distance = np.empty(shape=num_slices, dtype=float)
+        slices_argmax_distance = np.empty(shape=num_slices, dtype=np.int64)
 
         # TODO to reduce computation, only recalc slices which are new
-        for i in range(0, (num_reduced_idxs - 1)):
-            slice_start = reduced_idxs[i]
-            slice_end = reduced_idxs[i + 1] + 1
-            if (slice_end - 1 - slice_start ) == 1:
+        for i in range(0, num_slices):
+            slice_start = slices[i, 0]
+            slice_end = slices[i, 1]
+            if (slice_end - slice_start) == 1:
                 # skip slices between directly neighboring points
                 continue
-            slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:slice_end,])
+            slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:(slice_end+1),])
             slices_max_distance[i] = np.max(slice_normal_distances)
             slices_argmax_distance[i] = np.argmax(slice_normal_distances) + slice_start + 1
 
@@ -45,14 +44,18 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
         else:
             argmax_over_max_distance_of_all_slices = np.argmax(slices_max_distance)
             idx_to_be_added = slices_argmax_distance[argmax_over_max_distance_of_all_slices]
-            reduced_idxs[num_reduced_idxs] = (int(idx_to_be_added))
-            num_reduced_idxs += 1
-            reduced_idxs.sort()
+            discarded_slice_end = slices[argmax_over_max_distance_of_all_slices, 1]
+            slices[argmax_over_max_distance_of_all_slices, 1] = int(idx_to_be_added)
+            slices[num_slices] = np.asarray((int(idx_to_be_added), discarded_slice_end))
+            num_slices += 1
 
-        if (num_reduced_idxs >= max_points):
+        if ((num_slices+1) >= max_points):
             to_terminate = True
-    
-    return reduced_idxs[:num_reduced_idxs]
+
+    slices[num_slices] = np.asarray((x.shape[0]-1, 0))  # add last point as dummy slice
+    res_array = slices[:num_slices+1, 0]
+    res_array.sort()
+    return res_array
 
 
 def _calc_normal_distances_to_aux_line(points: np.array) -> np.array:
