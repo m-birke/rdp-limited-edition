@@ -8,34 +8,56 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
 
     :param x: x values
     :param y: y values
-    :param max_points: maximum number of points to retain
+    :param max_points: maximum number of points to retain, >= 2
     :param tolerance: tolerance band around auxiliary line
     :return: indexes of points to retain
     """
+
+    if max_points < 2:
+        msg = f"max_points accepts >= 2, {max_points} given"
+        raise ValueError(msg)
+
+    if max_points == 2:
+        return np.asarray((0, x.shape[0]-1))
+
     x_norm = (x - x.min()) / (x.max() - x.min())
     y_norm = (y - y.min()) / (y.max() - y.min())
     points = np.column_stack((x_norm, y_norm))
-    # initially keep first and last point
     slices = np.empty(shape=(x.shape[0]-1, 2), dtype=np.int64)
-    slices[0] = np.asarray((0, x.shape[0] - 1))
+    slices[0] = np.asarray((0, x.shape[0] - 1))  # initially keep first and last point
     num_slices = 1
+    new_slices = np.asarray((0,-1))  # initially there is only one slice
+
+    slices_max_distance = np.empty(shape=num_slices, dtype=float)
+    slices_argmax_distance = np.empty(shape=num_slices, dtype=np.int64)
 
     to_terminate = False
     while not to_terminate:
 
-        slices_max_distance = np.empty(shape=num_slices, dtype=float)
-        slices_argmax_distance = np.empty(shape=num_slices, dtype=np.int64)
+        # handle first slice, which overwrites existing slice
+        slice_start = slices[new_slices[0], 0]
+        slice_end = slices[new_slices[0], 1]
+        if (slice_end - slice_start) == 1:
+            # skip slices between directly neighboring points
+            slices_max_distance[new_slices[0]] = -1.0  # invalid neg. distance
+            slices_argmax_distance[new_slices[0]] = x.shape[0]  # invalid idx out of bounds
+        else:
+            slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:(slice_end+1),])
+            slices_max_distance[new_slices[0]] = np.max(slice_normal_distances)
+            slices_argmax_distance[new_slices[0]] = np.argmax(slice_normal_distances) + slice_start + 1
 
-        # TODO to reduce computation, only recalc slices which are new
-        for i in range(0, num_slices):
-            slice_start = slices[i, 0]
-            slice_end = slices[i, 1]
+        if num_slices > 1:
+            # handle 2nd slice, which adds new data
+            slice_start = slices[new_slices[1], 0]
+            slice_end = slices[new_slices[1], 1]
             if (slice_end - slice_start) == 1:
                 # skip slices between directly neighboring points
-                continue
-            slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:(slice_end+1),])
-            slices_max_distance[i] = np.max(slice_normal_distances)
-            slices_argmax_distance[i] = np.argmax(slice_normal_distances) + slice_start + 1
+                slices_max_distance = np.append(slices_max_distance, -1.0)
+                slices_argmax_distance = np.append(slices_argmax_distance, x.shape[0])
+            else:
+                slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:(slice_end+1),])
+                slices_max_distance = np.append(slices_max_distance, np.max(slice_normal_distances))
+                slices_argmax_distance = np.append(slices_argmax_distance, (np.argmax(slice_normal_distances) + slice_start + 1))
 
         overall_max_distance = np.max(slices_max_distance)
         # if the max dist of every slice is already below tolerance, abort
@@ -47,6 +69,8 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
             discarded_slice_end = slices[argmax_over_max_distance_of_all_slices, 1]
             slices[argmax_over_max_distance_of_all_slices, 1] = int(idx_to_be_added)
             slices[num_slices] = np.asarray((int(idx_to_be_added), discarded_slice_end))
+            new_slices[0] = argmax_over_max_distance_of_all_slices
+            new_slices[1] = num_slices
             num_slices += 1
 
         if ((num_slices+1) >= max_points):
