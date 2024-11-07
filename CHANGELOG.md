@@ -1,5 +1,19 @@
 # rdp-limited-edition
 
+## v0.3 (2024-11-07)
+
+### Features
+
+- enable numba compilation
+
+### Bugfixes
+
+- return list of py integer only
+
+### Improved Documentation
+
+- add demo script
+
 ## v0.2 (2024-10-31)
 
 ### Features
