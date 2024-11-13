@@ -1,9 +1,9 @@
-from typing import Union
+from typing import List, Union
 
 import numpy as np
 
 
-def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[float, int]) -> list[int]:
+def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[float, int]) -> List[int]:
     """Apply RDP algorithm to points on line
 
     :param x: x values
