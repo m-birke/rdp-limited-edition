@@ -1,5 +1,11 @@
 # rdp-limited-edition
 
+## v0.3.1 (2024-11-13)
+
+### Bugfixes
+
+- type hints compatible with py<3.9
+
 ## v0.3 (2024-11-07)
 
 ### Features
