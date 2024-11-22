@@ -23,13 +23,15 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
     x_norm = (x - x.min()) / (x.max() - x.min())
     y_norm = (y - y.min()) / (y.max() - y.min())
     points = np.column_stack((x_norm, y_norm))
-    slices = np.empty(shape=(x.shape[0]-1, 2), dtype=np.int64)
+
+    state_arrays_size = max_points if (max_points < x.shape[0]) else x.shape[0]
+    slices = np.empty(shape=(state_arrays_size, 2), dtype=np.int64)
     slices[0] = np.asarray((0, x.shape[0] - 1))  # initially keep first and last point
     num_slices = 1
     new_slices = np.asarray((0,-1))  # initially there is only one slice
 
-    slices_max_distance = np.empty(shape=num_slices, dtype=float)
-    slices_argmax_distance = np.empty(shape=num_slices, dtype=np.int64)
+    slices_max_distance = np.full(shape=state_arrays_size, fill_value=-1.0)
+    slices_argmax_distance = np.full(shape=state_arrays_size, fill_value=state_arrays_size)
 
     to_terminate = False
     while not to_terminate:
@@ -40,7 +42,6 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
         if (slice_end - slice_start) == 1:
             # skip slices between directly neighboring points
             slices_max_distance[new_slices[0]] = -1.0  # invalid neg. distance
-            slices_argmax_distance[new_slices[0]] = x.shape[0]  # invalid idx out of bounds
         else:
             slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:(slice_end+1),])
             slices_max_distance[new_slices[0]] = np.max(slice_normal_distances)
@@ -50,21 +51,17 @@ def rdp_limed(x: np.ndarray, y: np.ndarray, max_points: int, tolerance: Union[fl
             # handle 2nd slice, which adds new data
             slice_start = slices[new_slices[1], 0]
             slice_end = slices[new_slices[1], 1]
-            if (slice_end - slice_start) == 1:
-                # skip slices between directly neighboring points
-                slices_max_distance = np.append(slices_max_distance, -1.0)
-                slices_argmax_distance = np.append(slices_argmax_distance, x.shape[0])
-            else:
+            if (slice_end - slice_start) > 1:
                 slice_normal_distances = _calc_normal_distances_to_aux_line(points[slice_start:(slice_end+1),])
-                slices_max_distance = np.append(slices_max_distance, np.max(slice_normal_distances))
-                slices_argmax_distance = np.append(slices_argmax_distance, (np.argmax(slice_normal_distances) + slice_start + 1))
+                slices_max_distance[new_slices[1]] = np.max(slice_normal_distances)
+                slices_argmax_distance[new_slices[1]] = np.argmax(slice_normal_distances) + slice_start + 1
 
-        overall_max_distance = np.max(slices_max_distance)
+        overall_max_distance = np.max(slices_max_distance[:num_slices])
         # if the max dist of every slice is already below tolerance, abort
         if (overall_max_distance < tolerance):
             to_terminate = True
         else:
-            argmax_over_max_distance_of_all_slices = np.argmax(slices_max_distance)
+            argmax_over_max_distance_of_all_slices = np.argmax(slices_max_distance[:num_slices])
             idx_to_be_added = slices_argmax_distance[argmax_over_max_distance_of_all_slices]
             discarded_slice_end = slices[argmax_over_max_distance_of_all_slices, 1]
             slices[argmax_over_max_distance_of_all_slices, 1] = int(idx_to_be_added)
